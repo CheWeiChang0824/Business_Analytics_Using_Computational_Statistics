@@ -1,0 +1,300 @@
+---
+title: "HW_Week11_108020033"
+author: "Che-Wei, Chang"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-04-27"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Question 1) 
+Let’s deal with nonlinearity first. Create a new dataset that log-transforms several variables from our original dataset (called cars in this case):
+
+```{r}
+# Import the data
+cars <- read.table("auto-data.txt", header = FALSE, na.strings = "?")
+names(cars) <- c("mpg",  "cylinders", "displacement", "horsepower", "weight", 
+                 "acceleration", "model_year", "origin", "car_name")
+
+# Create data frame
+cars_log <- with(cars, data.frame(log(mpg), log(cylinders), log(displacement), 
+                                  log(horsepower), log(weight), log(acceleration), 
+                                  model_year, origin))
+```
+
+a. Run a new regression on the cars_log dataset, with mpg.log. dependent on all other variables
+
+(i). Which log-transformed factors have a significant effect on log.mpg. at 10% significance?
+
+```{r}
+# Preprocess the data
+cars$origin <- factor(cars$origin)
+cars_log$origin <- factor(cars_log$origin)
+
+# Create model
+lm_fit <- lm(log.mpg. ~ log.cylinders. + log.displacement. + log.horsepower. + 
+             log.weight. + log.acceleration. + model_year + origin, data = cars_log)
+summary(lm_fit)
+
+# By the table, since the P-value of log.horsepower., log.weight., log.acceleration., 
+# model_year, origin2 and origin3 are <= 10%, we can say that these factors have a 
+# significant effect on log.mpg. at 10% significance
+```
+
+(ii). Do some new factors now have effects on mpg, and why might this be?
+
+```{r}
+# Create original model
+lm_original <- lm(mpg ~ cylinders + displacement + horsepower + weight + acceleration 
+                  + model_year + origin, data = cars)
+summary(lm_original)
+
+# By the table that we do log_transform before, we can see that if we don't do log_transform, 
+# then cylinders, horsepower and acceleration don't have a significant effect on mpg at 10% 
+# significance.This is because log-transforming the variables changes their relationships with 
+# the dependent variable from nonlinear to linear. Therefore, the results of original and doing 
+# log-transforming will be different.
+```
+
+(iii). Which factors still have insignificant or opposite (from correlation) effects on mpg? Why might this be?
+
+```{r}
+# By these two table, we can find that the factor of cylinders is still insignificant.
+# It is because log(cylinders) don't have a strong linear relationship with log(mpg).
+```
+
+b. Let’s take a closer look at weight, because it seems to be a major explanation of mpg
+
+(i). Create a regression (call it regr_wt) of mpg over weight from the original cars dataset
+
+```{r}
+# Create linear model
+regr_wt <- lm(mpg ~ weight, data = cars)
+summary(regr_wt)
+```
+
+(ii). Create a regression (call it regr_wt_log) of log.mpg. on log.weight. from cars_log
+
+```{r}
+# Create linear model
+regr_wt_log <- lm(log.mpg. ~ log.weight., data = cars_log)
+summary(regr_wt_log)
+```
+
+(iii). Visualize the residuals of both regression models (raw and log-transformed):
+
+1. density plots of residuals
+
+```{r}
+# Import the library
+library(ggplot2)
+
+# Density plot of residuals for regr_wt
+ggplot(data.frame(residuals = resid(regr_wt)), aes(x = residuals)) + 
+  geom_density() + 
+  ggtitle("Density Plot of Residuals for regr_wt")
+```
+
+```{r}
+# Density plot of residuals for regr_wt_log
+ggplot(data.frame(residuals = resid(regr_wt_log)), aes(x = residuals)) + 
+  geom_density() + 
+  ggtitle("Density Plot of Residuals for regr_wt_log")
+```
+
+2. scatterplot of log.weight. vs. residuals
+
+```{r}
+# Scatterplot of log.weight vs residuals for regr_wt_log
+ggplot(data = cars_log, aes(x = log.weight., y = residuals(regr_wt_log))) + 
+  geom_point() + 
+  ggtitle("Scatterplot of log.weight vs Residuals for regr_wt_log")
+```
+
+(iv). Which regression produces better distributed residuals for the assumptions of regression?
+
+```{r}
+# The density plot of residuals from the regression of log.mpg on log.weight appears to be 
+# more symmetrically distributed around 0, indicating that the assumptions of linear 
+# regression are better met when using the log transformation of the variables.
+```
+
+(v). How would you interpret the slope of log.weight. vs log.mpg. in simple words?
+
+```{r}
+# If x shows log.weight. and y shows log.mpg., then the slope of of log.weight vs log.mpg can 
+# be interpreted as how much log.mpg.(y-axis) changes for each units change in the 
+# log.weight.(x-axis).
+```
+
+(vi). From its standard error, what is the 95% confidence interval of the slope of log.weight. vs log.mpg.?
+
+```{r}
+confint(regr_wt_log, level = 0.95)
+```
+\newpage
+### Question 2) 
+
+Let’s tackle multicollinearity next. Consider the regression model:
+
+```{r}
+regr_log <- lm(log.mpg. ~ log.cylinders. + log.displacement. + log.horsepower. +
+                              log.weight. + log.acceleration. + model_year +
+                              factor(origin), data=cars_log)
+```
+
+a. Using regression and R-square, compute the VIF of log.weight. using the approach shown in class
+
+```{r}
+regr_log_weight <- lm(log.weight. ~ + log.cylinders. + log.displacement. + log.horsepower. +
+                      log.acceleration. + model_year + factor(origin), data=cars_log)
+
+R_square_weight <- summary(regr_log_weight)$r.squared
+VIF_log_weight <- 1 / (1 - R_square_weight)
+cat("VIF: ", VIF_log_weight, "\n")
+```
+
+b. Let’s try a procedure called Stepwise VIF Selection to remove highly collinear predictors. 
+
+   Start by Installing the ‘car’ package in RStudio -- it has a function called vif() 
+
+   (note: CAR package stands for Companion to Applied Regression -- it isn’t about cars!)
+
+```{r}
+library(car)
+```
+
+   (i). Use vif(regr_log) to compute VIF of the all the independent variables
+
+   (ii). Eliminate from your model the single independent variable with the largest VIF score that is also greater than 5
+
+   (iii). Repeat steps (i) and (ii) until no more independent variables have VIF scores above 5
+   
+   (iv). Report the final regression model and its summary statistics
+
+```{r}
+# i. use vif(regr_log) to compute VIF
+vif_scores <- vif(regr_log)
+vif_scores <- as.data.frame(vif_scores)
+vif_scores
+
+# ii and iii
+# select the factors that VIF scores are greater than 5
+factor_name <- c()
+for (row_name in rownames(vif_scores)) {
+  if(vif_scores[row_name, "GVIF"] <= 5) {
+    factor_name <- cbind(factor_name, row_name)
+  }
+}
+
+# Show the result whose VIF scores are smaller or equal to 5
+factor_name
+
+# Show the vif table whose vif scores are smaller or equal to 5
+new_vif_scores <- data.frame()
+for (row_name in rownames(vif_scores)) {
+  for (i in 1:length(factor_name)) {
+    if (factor_name[i] == row_name) {
+      new_vif_scores <- rbind(new_vif_scores, vif_scores[row_name,])
+    }
+  }
+}
+new_vif_scores
+
+# Transform the name from factor(origin) to origin. 
+factor_name[3] <- "origin"
+factor_name
+
+# Leave the data that its factor of vif scores are smaller or equal to 5 
+# and use these data to create new linear model
+sel_cars_log <- subset(cars_log, select = factor_name)
+sel_cars_log <- cbind(sel_cars_log, cars_log$log.weight.)
+colnames(sel_cars_log)[4] <- "log.weight."
+
+# Create the model
+new_regr_model <- lm(log.weight. ~ log.acceleration. + model_year + factor(origin), data = sel_cars_log)
+
+# Report final regression model
+summary(new_regr_model)
+```
+
+c. Using stepwise VIF selection, have we lost any variables that were previously significant?  
+
+   If so, how much did we hurt our explanation by dropping those variables? (hint: look at model fit)
+
+```{r}
+summary(regr_log_weight)
+
+# If we use stepwise VIF selection, then we will leave acceleration, model_year, origin.
+# (i.e. we remove cylinders displacement horsepower that are significant from original table)
+# From the original table and the table we eliminate, we can find that it changes a little
+# only the factor(origin)3 changes from insignificant to significant.
+# Hence, I think that I hurt a little about our explanation by dropping those variables.
+```
+
+d. From only the formula for VIF, try deducing/deriving the following:
+
+(i). If an independent variable has no correlation with other independent variables, what would its VIF score be? 
+
+```{r}
+# If an independent variable has no correlation with other independent variables, then 
+# R-square will be zero. Besides, VIF = 1 / (1 - R-square). Hence, VIF score will be 1.
+```
+
+(ii). Given a regression with only two independent variables (X1 and X2), how correlated would X1 and X2 have to be, to get VIF scores of 5 or higher? To get VIF scores of 10 or higher?
+
+```{r}
+# Since VIF = 1 / (1 - R-square), R-square = cor(X1, X2) ^ 2.
+# Hence, VIF = 1 / (1 - cor(X1, X2) ^ 2)
+# To get VIF scores of 5 or higher, we set equation: 5 <= 1 / (1 - cor(X1, X2) ^ 2)
+# 0.894428 <= cor(X1, X2) < 1 or -0.894428 >= cor(X1, X2) > -1
+# To get VIF scores of 10 or higher, we set equation: 10 <= 1 / (1 - cor(X1, X2) ^ 2)
+# 0.948683 <= cor(X1, X2) < 1 or -0.948683 >= cor(X1, X2) > -1
+```
+
+### Question 3) 
+Might the relationship of weight on mpg be different for cars from different origins? 
+
+Let’s try visualizing this. First, plot all the weights, using different colors and symbols for the three origins:
+
+(you may choose any three colors you wish or plot this using ggplot etc. – the code below is for reference)
+
+```{r}
+# origin_colors = c("blue", "darkgreen", "red")
+# with(cars_log, plot(log.weight., log.mpg., pch=origin , col=origin_colors[origin]))
+```
+
+a. Let’s add three separate regression lines on the scatterplot, one for each of the origins.
+
+   Here’s one for the US to get you started:
+
+```{r}
+# cars_us <- subset(cars_log, origin==1)
+# wt_regr_us <- lm(log.mpg. ~ log.weight., data=cars_us)
+# abline(wt_regr_us, col=origin_colors[1], lwd=2)
+```
+
+```{r}
+# Create scatter plot
+origin_colors = c("blue", "darkgreen", "red")
+with(cars_log, plot(log.weight., log.mpg., pch=as.numeric(origin), col=origin_colors[origin]))
+
+# Separate data of us and add regression line
+cars_us <- subset(cars_log, origin == 1)
+wt_regr_us <- lm(log.mpg. ~ log.weight., data = cars_us)
+abline(wt_regr_us, col = origin_colors[1], lwd = 2)
+
+# Separate data of Euerope and add regression line
+cars_eu <- subset(cars_log, origin == 2)
+wt_regr_eu <- lm(log.mpg. ~ log.weight., data = cars_eu)
+abline(wt_regr_eu, col = origin_colors[2], lwd = 2)
+
+# Separate data of Japan and add regression line
+cars_jp <- subset(cars_log, origin == 3)
+wt_regr_jp <- lm(log.mpg. ~ log.weight., data = cars_jp)
+abline(wt_regr_jp, col = origin_colors[3], lwd = 2)
+```

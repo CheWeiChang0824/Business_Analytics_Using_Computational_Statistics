@@ -1,0 +1,158 @@
+---
+title: "HW_Week14_108020033"
+author: "Che-Wei, Chang"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-05-16 helped by 108020024"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Let’s reconsider the security questionnaire from last week, where consumers were asked security related questions about one of the e-commerce websites they had recently used.
+
+### Question 1) Earlier, we examined a dataset from a security survey sent to customers of e-commerce websites. However, we only used the eigenvalue > 1 criteria and the screeplot “elbow” rule to find a suitable number of components. Let’s perform a parallel analysis as well this week:
+
+```{r}
+# Import the library
+library(readxl)
+```
+
+```{r}
+# Read the data
+sec_que_q <- read_excel("security_questions.xlsx", sheet = "questions")
+sec_que_d <- read_excel("security_questions.xlsx", sheet = "data")
+```
+
+a. Show a single visualization with scree plot of data, scree plot of simulated noise (use $average~eigenvalues~of \geq 100$ noise samples), and a horizontal line showing the eigenvalue = 1 cutoff.
+
+```{r}
+# Find eigenvalues for the dataset of intereset
+pca_sq_d <- prcomp(sec_que_d, scale. = TRUE)
+
+# Function to run a PCA on n * p dataframe of random values
+sim_noise_ev <- function(n, p) {
+  noise <- data.frame(replicate(p, rnorm(n))) 
+  eigen(cor(noise))$values
+}
+
+# Repeat this k times
+evalues_noise <- replicate(100, sim_noise_ev(33, 10))
+
+# Average each of the noise eigenvalues  over k to produce 
+evalues_mean <- apply(evalues_noise, 1, mean)
+
+screeplot(pca_sq_d, type = "lines")
+lines(evalues_mean, type = "b", col = "blue")
+abline(h = 1, lty = "dotted")
+```
+
+b. How many dimensions would you retain if we used Parallel Analysis?
+
+```{r}
+# By the plot, we can find that 4 PCs have higher eigenvalues than the average noise
+# and their eigenvalues are > 1.
+# Therefore, If we use Parallel Analysis, 4 dimensions will be retained.
+```
+
+### Question 2) Earlier, we treated the underlying dimensions of the security dataset as composites and examined their eigenvectors (weights). Now, let’s treat them as factors and examine factor loadings (use the principal() method from the psych package)
+
+```{r}
+library(psych)
+```
+
+a. Looking at the loadings of the first 3 principal components, to which components does each item seem to best belong?
+
+```{r}
+sq_d_pca3_orig <- principal(sec_que_d, nfactors = 3, rotate = "none", scores = TRUE)
+sq_d_pca3_orig
+
+# By the data frame, we can find that most of variables seem to best belong to PC1, 
+# only Q4, Q12, Q17 best belong to PC2.
+```
+
+b. How much of the total variance of the security dataset do the first 3 PCs capture?
+
+```{r}
+sq_d_pca3_orig$Vaccounted
+
+# By the table, we can find that the total variance of the security dataset is 
+# approximately 0.670.
+```
+\newpage
+
+c. Looking at commonality and uniqueness, which items are less than adequately explained by the first 3 principal components?
+
+```{r}
+# By the data frame in part a, we can find that Q2 has smallest h2. Therefore, I 
+# think Q2 is less than adequately explained by the first 3 principal components.
+```
+
+d. How many measurement items share similar loadings between 2 or more components?
+
+```{r}
+sq_d_pca3_orig$loadings
+
+# By the table, we can find that Q4, Q12, Q17 share similar loadings between 2 or 
+# more components.
+```
+
+e. Can you interpret a ‘meaning’ behind the first principal component from the items that load best upon it? (see the wording of the questions of those items)
+
+```{r}
+# The first principal component, based on the items that load most strongly on it, represents 
+# the perception of security and privacy measures taken by the website. Users who score higher 
+# on this component have a stronger belief in the site’s commitment to confidentiality, accuracy 
+# verification, identity verification, protection against unauthorized access, and the use of security
+# controls. In simpler terms, the first principal component reflects users’ trust in the website’s 
+# ability to keep their information secure and private.
+```
+
+### Question 3) To improve interpretability of loadings, let’s rotate our principal component axes using the varimax technique to get rotated components (extract and rotate only three principal components)
+a. Individually, does each rotated component (RC) explain the same, or different, amount of variance than the corresponding principal components (PCs)?
+
+```{r}
+sq_d_pca3_rot <- principal(sec_que_d, nfactors = 3, rotate = "varimax", scores = TRUE)
+sq_d_pca3_rot
+# By the table we created here and comparing with table in part a of Question 2, 
+# we can find that the values in row of Proportion Var are changed. 
+# Therefore, each rotated component explain the different amount of variance than 
+# the corresponding principal components.
+```
+
+b. Together, do the three rotated components explain the same, more, or less cumulative variance as the three principal components combined?
+
+```{r}
+# By the table we created here and comparing with table in part a of Question 2, 
+# we can find that cumulative variance is still 0.670.
+# Therefore, these three rotated components explain the same cumulative variance.
+# as the three principal components combined.
+```
+
+c. Looking back at the items that shared similar loadings with multiple principal components (#2d), do those items have more clearly differentiated loadings among rotated components?
+
+```{r}
+sq_d_pca3_rot$loadings
+# Yes, by the table, we can find that those items have more clearly differentiated
+# loadings among rotated components.
+```
+
+d. Can you now more easily interpret the “meaning” of the 3 rotated components from the items that load best upon each of them? (see the wording of the questions of those items)
+
+```{r}
+# Yes, since we use varimax technique, we can now more easily interpret the meaning of
+# the 3 rotated components from the items.
+# In short words, we can say that:
+# RC1: Trust and Confidentiality
+# RC3: Protection of Transactions and Personal Information
+# RC2: Security Controls and Accuracy
+```
+
+e. If we reduced the number of extracted and rotated components to 2, does the meaning of our rotated components change?
+
+```{r}
+# Yes, when we reduce the number of extracted and rotated components from a factor analysis,
+# the meaning of the rotated components can change.
+```

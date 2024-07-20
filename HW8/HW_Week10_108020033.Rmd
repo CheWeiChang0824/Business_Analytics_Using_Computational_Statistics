@@ -1,0 +1,342 @@
+---
+title: "HW_Week10_108020033"
+author: "Che-Wei, Chang"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-04-19 helped by 108020024, 108020031"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Question 1) 
+
+We will use the interactive_regression() function from CompStatsLib again – Windows users please make sure your desktop scaling is set to 100% and RStudio zoom is 100%;  alternatively, run R from the Windows Command Prompt.
+
+```{r}
+# Import the library
+library(compstatslib)
+```
+
+To answer the questions below, understand each of these four scenarios by simulating them:
+
+Scenario 1: Consider a very narrowly dispersed set of points that have a negative or positive steep slope
+
+```{r, out.width = "350px"}
+knitr::include_graphics("Plot_1.png")
+```
+
+Scenario 2: Consider a widely dispersed set of points that have a negative or positive steep slope
+
+```{r, out.width = "350px"}
+knitr::include_graphics("Plot_2.png")
+```
+\newpage
+Scenario 3: Consider a very narrowly dispersed set of points that have a negative or positive shallow slope
+
+```{r, out.width = "350px"}
+knitr::include_graphics("Plot_3.png")
+```
+\newpage
+Scenario 4: Consider a widely dispersed set of points that have a negative or positive shallow slope
+
+```{r, out.width = "350px"}
+knitr::include_graphics("Plot_4.png")
+```
+\newpage
+a. Comparing scenarios 1 and 2, which do we expect to have a stronger R^2 ?
+
+```{r}
+# By two plots of scenario 1 and scenario 2, we can see that scenario 1 has a stronger R^2 
+# than scenario 2.This is because in scenario 1, the data points are very narrowly dispersed, 
+# meaning there is less variation in the data and a stronger linear relationship between the 
+# x and y variables. In contrast, scenario 2 has widely dispersed data points, meaning there 
+# is more variation in the data and a weaker linear relationship between the x and y variables.
+```
+
+b. Comparing scenarios 3 and 4, which do we expect to have a stronger R^2 ?
+
+```{r}
+# By two plots of scenario 3 and scenario 4, we can see that scenario 3 has a stronger R^2 
+# than scenario 4.This is because in scenario 3, the data points are very narrowly dispersed, 
+# meaning there is less variation in the data and a stronger linear relationship between the
+# x and y variables. In contrast, scenario 4 has widely dispersed data points, meaning there 
+# is more variation in the data and a weaker linear relationship between the x and y variables.
+```
+
+c. Comparing scenarios 1 and 2, which do we expect has bigger/smaller SSE, SSR, and SST? (intuitively)
+
+```{r}
+# In scenarios 1 and 2, we expect scenario 1 to have smaller SSE, SSR, and SST. 
+#(i.e. scenario 2 has bigger SSE, SSR and SST.) This is because in scenario 1, 
+# the data points are more tightly clustered around the regression line, leading 
+# to a smaller error term and a stronger linear relationship. In contrast, 
+# in scenario 2, the data points are spread out, leading to a larger error 
+# term and a weaker linear relationship. 
+```
+
+d. Comparing scenarios 3 and 4, which do we expect has bigger/smaller SSE, SSR, and SST? (intuitively)
+
+```{r}
+# In scenarios 3 and 4, we expect scenario 3 to have smaller SSE, SSR, and SST. 
+# (i.e. scenario 4 has bigger SSE, SSR, and SST.) This is because in scenario 3, 
+# the data points are more tightly clustered around the regression line, leading 
+# to a smaller error term and a stronger linear relationship. In contrast, 
+# in scenario 4, the data points are spread out, leading to a larger error 
+# term and a weaker linear relationship.
+```
+
+### Question 2) 
+Let’s analzye the programmer_salaries.txt dataset we saw in class. Read the file using read.csv("programmer_salaries.txt", sep="\t") because the columns are separated by tabs (\t).
+
+```{r}
+# Read the data
+df <- read.csv("programmer_salaries.txt", sep = "\t")
+```
+
+a. Use the lm() function to estimate the regression model Salary ~ Experience + Score + Degree
+
+   Show the beta coefficients, R-square, and the first 5 values of y  ($fitted.values) and  ($residuals)
+
+```{r}
+# Fit the regression model
+model <- lm(Salary ~Experience + Score + Degree, df)
+
+# extract the beta coefficients and R-square
+coefficients <- coef(model)
+R_square <- summary(model)$r.squared
+
+# extract the first 5 values of y hat and residuals
+y_hat <- head(fitted(model), 5)
+res <- head(resid(model), 5)
+
+# print the result
+cat("beta: ", coefficients, "\n")
+cat("R-square: ", R_square, "\n")
+cat("first 5 values of y hat: ", y_hat, "\n")
+cat("residuals: ", res, "\n")
+```
+
+b. Use only linear algebra and the geometric view of regression to estimate the regression yourself:
+   i. Create an X matrix that has a first column of 1s followed by columns of the independent variables (only show the code)
+
+```{r}
+# Create the X matrix
+X <- cbind(rep(1, nrow(df)), df$Experience, df$Score, df$Degree)
+```
+   
+   ii. Create a y vector with the Salary values (only show the code)
+
+```{r}
+# put the data into y variable
+y <- df$Salary
+
+# Create y vector
+y_vec <- as.matrix(y)
+```
+
+   iii. Compute the beta_hat vector of estimated regression coefficients (show the code and values)
+
+```{r}
+# Compute beta_hat
+beta_hat <- solve(t(X) %*% X) %*% t(X) %*% y_vec
+beta_hat
+```
+   
+   iv. Compute a y_hat vector of estimated y values, and a res vector of residuals (show the code and the first 5 values of y_hat and res)
+
+```{r}
+# Compute y_hat and res
+y_hat <- X %*% beta_hat
+res <- y - y_hat
+
+# Show the result
+head(y_hat, 5)
+head(res, 5)
+```
+   
+   v. Using only the results from (i) – (iv), compute SSR, SSE and SST (show the code and values)
+
+```{r}
+# Calculate SSR, SSE, SST
+SSR <- sum((y_hat - mean(y))^2)
+SSE <- sum(res^2)
+SST <- sum((y - mean(y))^2)
+cat("SSR: ", SSR, "\n")
+cat("SSE: ", SSE, "\n")
+cat("SST: ", SST, "\n")
+```
+\newpage
+c. Compute R-square for in two ways, and confirm you get the same results (show code and values):
+
+   i. Use any combination of SSR, SSE, and SST
+   
+```{r}
+# Calculate R square using SSR, SST
+R_square_ssr_sst <- SSR / SST
+cat("Using SSR, SST\n")
+cat("R square: ", R_square_ssr_sst, "\n")
+
+# Calculate R square using SSE, SST
+R_square_sse_sst <- 1 - (SSE/SST)
+cat("Using SSE, SST\n")
+cat("R square: ", R_square_sse_sst, "\n")
+```
+   
+   ii. Use the squared correlation of vectors y and y
+
+```{r}
+# Compute R square using squared correlation of y and y_hat
+R_square_corr <- cor(y, y_hat)^2
+cat("R square: ", R_square_corr)
+```
+
+### Question 3) 
+
+We’re going to take a look back at the early heady days of global car manufacturing, when American, Japanese, and European cars competed to rule the world. Take a look at the data set in file auto-data.txt. We are interested in explaining what kind of cars have higher fuel efficiency (mpg).
+
+Note that the data has missing values (‘?’ in data set), and lacks a header row with variable names:
+
+```{r}
+auto <- read.table("auto-data.txt", header = FALSE, na.strings = "?")
+names(auto) <- c("mpg",  "cylinders", "displacement", "horsepower", "weight", 
+                 "acceleration", "model_year", "origin", "car_name")
+```
+
+a. Let’s first try exploring this data and problem:
+   i. Visualize the data as you wish (report only relevant/interesting plots)
+   
+```{r}
+# Draw the histogram of single variable
+hist(auto$mpg, breaks = 20, main = "Histogram of mpg")
+hist(auto$cylinders, breaks = 20, main = "Histogram of cylinders")
+hist(auto$displacement, breaks = 20, main = "Histogram of displacement")
+hist(auto$horsepower, breaks = 20, main = "Histogram of horsepower")
+hist(auto$weight, breaks = 20, main = "Histogram of weight")
+hist(auto$acceleration, breaks = 20, main = "Histogram of acceleration")
+hist(auto$model_year, breaks = 20, main = "Histogram of model_year")
+hist(as.numeric(auto$origin), breaks = 20, main = "Histogram of origin")
+```
+
+   ii. Report a correlation table of all variables, rounding to two decimal places
+       (in the cor() function, set use="pairwise.complete.obs" to handle missing values)
+
+```{r}
+# Remove the car_name col since it is not numeric
+new_auto <- auto[,-9]
+round(cor(new_auto, use = "pairwise.complete.obs"), 2)
+```
+
+   iii. From the visualizations and correlations, which variables appear to relate to mpg?
+
+```{r}
+# From the table, we can see that cylinders, displacement, horsepower, weight are all negatively
+# related to mpg.Besides, acceleration, model_year, origin are all positively related to mpg.
+```
+
+   iv. Which relationships might not be linear? (don’t worry about linearity for rest of this HW)
+
+```{r}
+# import the library
+library(GGally)
+
+# Show the plot
+ggpairs(new_auto)
+
+# This table shows that which pairs are linear and which pairs are not linear.
+```
+
+```{r}
+# From the table we create above, we choose some pairs that are not linear to show.
+plot(auto$mpg, auto$acceleration, main = "mpg v.s. acceleration")
+plot(auto$mpg, auto$model_year, main = "mpg v.s. model_year")
+plot(auto$displacement, auto$model_year, main = "displacement v.s. model_year")
+plot(auto$horsepower, auto$model_year, main = "horsepower v.s. model_year")
+plot(auto$weight, auto$acceleration, main = "weight v.s. acceleration")
+plot(auto$weight, auto$model_year, main = "weight v.s. model_year")
+plot(auto$acceleration, auto$model_year, main = "acceleration v.s model year")
+
+```
+
+   v. Are there any pairs of independent variables that are highly correlated (r > 0.7)?
+
+```{r}
+# cylinder and displacement (r = 0.95)
+# cylinder and horsepower (r = 0.84)
+# cylinder and weight (r = 0.90)
+# displacement and horsepower (r = 0.90)
+# displacement and weight (r = 0.93)
+# horsepower and weight (r = 0.86)
+```
+
+b. Let’s create a linear regression model where mpg is dependent upon all other suitable variables (Note: origin is categorical with three levels, so use factor(origin) in lm(...)  to split it into two dummy variables)
+
+   i. Which independent variables have a ‘significant’ relationship with mpg at 1% significance?
+
+```{r}
+# Preprocess the data
+auto$origin <- factor(auto$origin)
+auto <- cbind(auto, model.matrix(~ auto$origin - 1))
+names(auto)[10:11] <- c("origin1", "origin2")
+
+# Create model
+lm_fit <- lm(mpg ~ cylinders + displacement + horsepower + weight + acceleration 
+             + model_year + origin1 + origin2, data = auto)
+Table <- summary(lm_fit)
+
+# Show the subset of the table that meet 1% significance
+sig <- Table$coefficients[row.names(Table$coefficients) != "(Intercept)" & 
+                            Table$coefficients[, 4] < 0.01, ]
+print(sig)
+```
+   
+   ii. Looking at the coefficients, is it possible to determine which independent variables are the most effective at increasing mpg? If so, which ones, and if not, why not? (hint: units!)
+
+```{r}
+# No , because different variables have different scale of units, it is not effective  
+# that we use these beta estimates that we haven't standardized to determine which 
+# independent variables are the most effective at increasing mpg.
+```
+   
+c. Let’s try to resolve some of the issues with our regression model above.
+
+   i. Create fully standardized regression results: are these slopes easier to compare?
+      (note: consider if you should standardize origin)
+
+```{r}
+# Since all features are all standardized, these slopes are easier to compare.
+auto_std <- data.frame(scale(new_auto))
+fit_std <- lm(scale(mpg) ~ ., data = auto_std)
+summary(fit_std)
+```
+      
+   ii. Regress mpg over each non-significant independent variable, individually.
+       Which ones become significant when we regress mpg over them individually?
+
+```{r}
+# Extract the list of non-significant independent variables
+non_sig_vars <- names(which(summary(fit_std)$coefficients[, 4] >= 0.05))[-1]
+
+# Loop over each non-significant variable and fit a regression model
+for (var in non_sig_vars) {
+  formula_str <- paste("scale(mpg) ~", var)
+  cat("Variable:", var, "\n")
+  model <- lm(formula_str, data = auto_std)
+  print(summary(model))
+  cat("\n")
+}
+```
+\newpage       
+   iii. Plot the distribution of the residuals: are they normally distributed and centered around zero?
+        (get the residuals of a fitted linear model, e.g. regr <- lm(...), using regr$residuals
+
+```{r}
+regr <- lm(mpg ~ . + factor(origin), data = auto_std)
+hist(regr$residuals, breaks = 20, main = "Histogram of residuals")
+
+# By the plot, we think that they are normally distributed and centered around zero.
+# But I think that we use normality test to check whether the data is normally distributed 
+# is better than just look the plot.
+```

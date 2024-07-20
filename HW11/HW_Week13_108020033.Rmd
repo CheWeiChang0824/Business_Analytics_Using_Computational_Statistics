@@ -1,0 +1,161 @@
+---
+title: "HW_Week13_108020033"
+author: "Che-Wei, Chang"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-05-09 helped by 108020024"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Question 1) Let’s revisit the issue of multicollinearity of main effects (between cylinders, displacement, horsepower, and weight) we saw in the cars dataset, and try to apply principal components to it. Start by recreating the cars_log dataset, which log-transforms all variables except model year and origin.
+
+Important: remove any rows that have missing values.
+
+```{r}
+# Import the data
+cars <- read.table("auto-data.txt", header = FALSE, na.strings = "?")
+names(cars) <- c("mpg",  "cylinders", "displacement", "horsepower", "weight", 
+                 "acceleration", "model_year", "origin", "car_name")
+
+# Create data frame
+cars_log <- with(cars, data.frame(log(mpg), log(cylinders), log(displacement), 
+                                  log(horsepower), log(weight), log(acceleration), 
+                                  model_year, origin))
+cars_log  <- cars_log[complete.cases(cars_log),]
+```
+
+a. Let’s analyze the principal components of the four collinear variables
+
+(i) Create a new data.frame of the four log-transformed variables with high multicollinearity
+(Give this smaller data frame an appropriate name – what might they jointly mean?)
+
+```{r}
+# Create a new data frame of four log-transformed variables with high multicollinearity
+select_name <- c("log.cylinders.", "log.displacement.", "log.horsepower.", "log.weight.")
+new_df <- subset(cars_log, select = select_name)
+new_df <- new_df[complete.cases(new_df),]
+```
+
+(ii) How much variance of the four variables is explained by their first principal component?
+(a summary of the prcomp() shows it, but try computing this from the eigenvalues alone)
+
+```{r}
+# Show the variances of the four variables
+new_df_eigen <- eigen(cor(new_df))
+new_df_eigen$values[1] / sum(new_df_eigen$values)
+```
+\newpage
+
+(iii) Looking at the values and valence (positiveness/negativeness) of the first principal component’s eigenvector, what would you call the information captured by this component?
+(i.e., think what concept the first principal component captures or represents)
+
+```{r}
+new_df_eigen$vectors
+
+# By the table, We can find that pc1 equally captures cylinders, displacement, horsepower,
+# and weight; pc2 captures mostly horsepower; pc3 mostly caputure weight; pc4 captures displacement.
+```
+
+b. Let’s revisit our regression analysis on cars_log:
+
+(i) Store the scores of the first principal component as a new column of cars_log
+cars_log$new_column_name <- ...scores of PC1…
+Give this new column a name suitable for what it captures (see 1.a.i.)
+
+```{r}
+# Store the scores of the first principal component as a new column
+pca <- prcomp(cars_log, scale. = FALSE)
+cars_log$PC1 <- pca$x[, 1]
+```
+
+(ii) Regress mpg over the column with PC1 scores (replacing cylinders, displacement, horsepower, and weight), as well as acceleration, model_year and origin
+
+```{r}
+# Create linear model
+lm_model <- lm(log.mpg. ~ PC1 + log.acceleration. + 
+                 model_year + factor(origin), data = cars_log)
+
+# Show the summary of the linear model
+summary(lm_model)
+```
+
+(iii) Try running the regression again over the same independent variables, but this time with everything standardized. How important is this new column relative to other columns?
+   
+```{r}
+# Standardized the data
+cars_log_std <- scale(cars_log)
+cars_log_std <- as.data.frame(cars_log_std)
+
+# Create linear model
+lm_model_std <- lm(log.mpg. ~ PC1 + log.acceleration. + model_year + 
+                   factor(origin), data = cars_log_std)
+
+# Show the summary of linear model
+summary(lm_model_std)
+```
+\newpage
+
+### Question 2) Please download the Excel data file security_questions.xlsx from Canvas. In your analysis, you can either try to read the data sheet from the Excel file directly from R (there might be a package for that!) or you can try to export the data sheet to a CSV file before reading it into R.
+
+A group of researchers is studying how customers who shopped on e-commerce websites over the winter holiday season perceived the security of their most recently used e-commerce site. Based on feedback from experts, the company has created eighteen questions (see ‘questions’ tab of excel file) regarding security considerations at e-commerce websites. Over 400 customers responded to these questions (see ‘data’ tab of Excel file). The researchers now wants to use the results of these eighteen questions to reveal if there are some underlying dimensions of people’s perception of online security that effectively capture the variance of these eighteen questions. Let’s analyze the principal components of the eighteen items.
+
+```{r}
+# Import the library
+library(readxl)
+```
+
+```{r}
+# Read the data
+sec_que_q <- read_excel("security_questions.xlsx", sheet = "questions")
+sec_que_d <- read_excel("security_questions.xlsx", sheet = "data")
+```
+
+a. How much variance did each extracted factor explain?
+
+```{r}
+pca_sq_d <- prcomp(sec_que_d, scale. = TRUE)
+var_ext <- pca_sq_d$sdev^2 / sum(pca_sq_d$sdev^2)
+var_ext
+```
+
+b. How many dimensions would you retain, according to the two criteria we discussed?
+
+(Eigenvalue >= 1 and Scree Plot – can you show the screeplot with eigenvalue = 1 threshold?)
+
+```{r}
+# Check for eigenvalue >= 1
+Data_eigen <- eigen(cor(sec_que_d))
+Data_eigen$values
+
+# By using scree plot
+screeplot(pca_sq_d, type = "lines", npcs = length(pca_sq_d$sdev))
+
+# By these two criteria, We can find that only 3 eigenvalues >= 1 in 
+# eigenvalue >= 1 criteria. Also, 3 points would be retain by using 
+# eigenvalue = 1 threshold. Therefore, we would retain 3 dimension.
+```
+\newpage
+
+### Question 3) Let’s simulate how principal components behave interactively: run the interactive_pca() function from the compstatslib package we have used earlier:
+
+```{r}
+# Import library
+library(compstatslib)
+```
+
+a. Create an oval shaped scatter plot of points that stretches in two directions – you should find that the principal component vectors point in the major and minor directions of variance (dispersion). Show this visualization.
+
+```{r, out.width = "400px"}
+knitr::include_graphics("plot1.png")
+```
+\newpage
+
+b. Can you create a scatterplot whose principal component vectors do NOT seem to match the major directions of variance? Show this visualization.
+
+```{r, out.width = "400px"}
+knitr::include_graphics("plot2.png")
+```

@@ -1,0 +1,85 @@
+---
+title: "HW1-108020033"
+author: "Che-Wei, Chang"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+date: "2023-02-17"
+---
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(message = TRUE)
+```
+### 1.What is the 5th element in the original list of ages?
+```{r}
+my_data <- read.delim("customers.txt")# import data from customers.txt in my_data
+age <- my_data[,1]                    # the array age will get the data in my_data
+age[5]                                          
+```
+We put the data into a vector which called age and use age[5] to show the result
+
+### 2.What is the fifth lowest age?
+```{r}
+sorted_age <- sort(age, decreasing = F) # sort the data in ascending order and 
+sorted_age[5]                           # put the result into sorted_age
+```
+We use a vector to store the sorted age in ascending order and sorted_age[5] will show the fifth lowest age 
+
+### 3.Extract the five lowest ages together
+```{r}
+extract_sorted_age <- sorted_age[1:5]   # put the 1st ~ 5th element of sorted_age 
+extract_sorted_age                      # into extract_sorted_age
+```
+We use vector called extract_sorted_age to store the five lowest ages together and show the result
+
+### 4.Get the five highest ages by first sorting them in decreasing order first.
+```{r}
+sorted_age <- sort(age, decreasing = TRUE)# sort the data in decreasing order and 
+extract_sorted_age <- sorted_age[1:5]     # put into sorted_age and store into the
+extract_sorted_age                        # extract_sorted_age
+```
+We use a vector to store the sorted age in decreasing order and use extract_sorted_age to store the result
+
+### 5.What is the average (mean) age?
+```{r}
+mean(age)                                 # use mean() to get the average age 
+```
+We use mean() to get the average age
+
+### 6.What is the standard deviation of ages?
+```{r}
+sd(age)                     # use sd() to get the standard deviation of age
+```
+We use sd() to get standard deviation of ages
+
+### 7.Make a new variable called age_diff, with the difference between each age and the mean age
+```{r}
+age_diff <- age - mean(age) # let the element of age minus the average of age
+age_diff                    # show the result
+```
+### 8.What is the average “difference between each age and the mean age”?
+```{r}
+mean(age_diff)
+```
+Since computer uses exponent notation to represent the floating number, the answer is very close but not equal to 0.
+
+
+
+
+### 9.Visualize the raw data as we did in class: (a) histogram, (b) density plot, (c) boxplot+stripchart
+```{r}
+# (a) Plot a histogram of age
+hist(age, main = "histogram of age", xlab = "age")  # draw the histogram and show the result
+```
+```{r}
+# (b) density plot 
+plot(density(age), main = "Density plot of age", xlab = "age")  # draw the density plot
+```
+```{r}
+# (c) boxplot + stripchart
+library(ggplot2)                              # use ggplot2 to draw boxplot + stripchart
+ggplot(my_data, aes(x = "", y = age)) + 
+  geom_boxplot()+
+  geom_jitter()
+
+```
